@@ -1,0 +1,9 @@
+{
+  "name": "8051 Masterclass",
+  "description": "A hands-on, bilingual study companion for learning the 8051 microcontroller through lessons, visual guides, assembly practice and exam revision.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ],
+  "permissions": [],
+  "author": "Vineet Sharma"
+}
