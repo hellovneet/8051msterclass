@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronDown, ChevronUp, Search, Zap, RotateCcw } from 'lucide-react';
 
 type Item = { n: number; unit: number; kind: 'MCQ' | 'Short answer' | 'Long answer'; q: string; a: string; choices?: string[]; correct?: number; visual?: 'architecture' | 'timer' | 'serial' | 'interrupt' | 'memory' };
 
@@ -8,7 +8,7 @@ const bank: Item[] = [
 {n:2,unit:1,kind:'MCQ',q:'What is the bit size of the 8051?',choices:['8-bit','4-bit','16-bit','32-bit'],correct:0,a:'The classic 8051 is an 8-bit controller: its ALU and main data path operate on 8-bit values.'},
 {n:3,unit:1,kind:'MCQ',q:'Name the architecture and instruction-set style of the 8051.',choices:['Von Neumann + CISC','Harvard + CISC','Von Neumann + RISC','Harvard + RISC'],correct:1,a:'The 8051 uses Harvard-style separate code and data spaces, and its instruction set is commonly classified as CISC.'},
 {n:4,unit:1,kind:'MCQ',q:'How many general-purpose I/O ports does the classic 8051 have?',choices:['3','4','5','4 ports, with five pins on the last port'],correct:1,a:'There are four 8-bit ports: P0, P1, P2 and P3. Some pins have alternate functions.'},
-{n:5,unit:1,kind:'MCQ',q:'Is ROM used for storing data storage?',choices:['True','False'],correct:1,a:'As a general statement this is false: ROM stores program/constant data and is not ordinary writable working RAM. Some non-volatile memories can store data, but that is not the classic 8051 RAM role.'},
+{n:5,unit:1,kind:'MCQ',q:'Is ROM used for storing data storage?',choices:['True','False'],correct:0,a:'In the broad sense, true: ROM stores non-volatile information such as firmware and constants. It is not used as ordinary read-write working RAM. The printed question is ambiguous, so explain which meaning of “data storage” you use.'},
 {n:6,unit:1,kind:'MCQ',q:'Which pin provides reset in the 8051?',choices:['Pin 1','Pin 8','Pin 11','Pin 9'],correct:3,a:'RST is physical pin 9 on the standard 40-pin DIP 8051. It is active high and must be held high for the required reset interval.'},
 {n:7,unit:1,kind:'MCQ',q:'External Access (EA) is used to permit what?',choices:['Peripherals','Power supply','ALE','External program-memory interfacing'],correct:3,a:'EA selects the use of external program memory. With EA low, code fetches come from external program memory; with EA high, internal code memory is used where available, with external memory above its range.'},
 {n:8,unit:1,kind:'MCQ',q:'Which companies have manufactured 8051-family controllers?',choices:['Atmel','Philips/NXP','Intel','All of the above'],correct:3,a:'The 8051 architecture originated at Intel and has been implemented by many vendors, including Atmel and Philips/NXP.'},
@@ -139,7 +139,33 @@ export const QB2024Section: React.FC = () => {
   const [kind, setKind] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<number | null>(1);
+  const [practiceMode, setPracticeMode] = useState(false);
+  const [practiceItems, setPracticeItems] = useState<Item[]>([]);
+  const [practiceIndex, setPracticeIndex] = useState(0);
+  const [practiceChoice, setPracticeChoice] = useState<number | null>(null);
+  const [practiceScore, setPracticeScore] = useState(0);
   const visible = useMemo(() => bank.filter(x => (unit === 'all' || x.unit === unit) && (kind === 'all' || x.kind === kind) && (!query || (x.q + x.a).toLowerCase().includes(query.toLowerCase()))), [unit,kind,query]);
+  const startPractice = () => {
+    const pool = bank.filter(item => item.kind === 'MCQ' && item.correct !== undefined);
+    for (let i = pool.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    setPracticeItems(pool.slice(0, 10));
+    setPracticeIndex(0);
+    setPracticeChoice(null);
+    setPracticeScore(0);
+    setPracticeMode(true);
+  };
+  const choosePracticeAnswer = (choice: number) => {
+    if (practiceChoice !== null) return;
+    setPracticeChoice(choice);
+    if (choice === practiceItems[practiceIndex]?.correct) setPracticeScore(prev => prev + 1);
+  };
+  const nextPracticeQuestion = () => {
+    setPracticeChoice(null);
+    setPracticeIndex(prev => prev + 1);
+  };
   return <section id="qb2024" className="py-12 scroll-mt-20 border-t border-white/10">
     <div className="mb-7">
       <p className="text-xs font-black tracking-widest text-cyan-200 uppercase mb-1">ITV-304 · SESSION 2020–21 · UPDATED SOURCE: 2024 QB</p>
@@ -149,8 +175,9 @@ export const QB2024Section: React.FC = () => {
     <div className="flex flex-wrap gap-2 mb-5">
       <a href="#qb2024" onClick={()=>setView('questions')} className={`rounded-xl px-4 py-2 text-sm font-bold border ${view==='questions'?'bg-white text-black border-white':'border-white/15 text-slate-300'}`}><BookOpen className="inline w-4 h-4 mr-2"/>Question Bank</a>
       <a href="#qb2024" onClick={()=>setView('solutions')} className={`rounded-xl px-4 py-2 text-sm font-bold border ${view==='solutions'?'bg-white text-black border-white':'border-white/15 text-slate-300'}`}><CheckCircle2 className="inline w-4 h-4 mr-2"/>Solved QB</a>
+      <button type="button" onClick={startPractice} className="rounded-xl px-4 py-2 text-sm font-bold border border-cyan-200/30 bg-cyan-200/10 text-cyan-100 hover:bg-cyan-200/20"><Zap className="inline w-4 h-4 mr-2"/>Practice 10 MCQs</button>
     </div>
-    <div className="frost-glass rounded-2xl p-4 mb-5">
+    <div className={practiceMode ? "hidden" : "frost-glass rounded-2xl p-4 mb-5"}>
       <div className="flex flex-col lg:flex-row gap-3">
         <label className="relative flex-1"><Search className="absolute left-3 top-3 w-4 h-4 text-slate-500"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search questions or explanations" className="w-full bg-black/30 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-sm text-white outline-none focus:border-cyan-300/40"/></label>
         <select value={unit} onChange={e=>setUnit(e.target.value==='all'?'all':Number(e.target.value))} className="bg-[#10151d] border border-white/10 rounded-xl px-3 py-2 text-sm text-white"><option value="all">All units</option>{units.map((u,i)=><option key={u} value={i+1}>Unit {i+1}: {u}</option>)}</select>
@@ -158,8 +185,27 @@ export const QB2024Section: React.FC = () => {
       </div>
       <p className="text-xs text-slate-500 mt-3">Showing {visible.length} of {bank.length} questions · English answers</p>
     </div>
-    {view==='solutions' && <div className="frost-glass rounded-2xl p-4 sm:p-5 mb-5"><h3 className="font-bold text-white mb-2">How to use these model answers</h3><p className="text-sm text-slate-300 leading-relaxed">Start with the direct definition, explain the working in sequence, then draw the labelled signal path where shown. For numerical answers, write the formula, substitute values with units, and state the classic 12-clock-core assumption. The source QB includes a few ambiguous or mistaken prompts; those are explicitly called out in the relevant answer instead of silently changing the question.</p><div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/5 p-3 text-xs text-amber-100">Visual guides are conceptual. Pin numbers, timing limits and electrical connections should be checked against the exact 8051 derivative and peripheral datasheets used in your lab.</div></div>}
-    <div className="space-y-3">
+    {!practiceMode && view==='solutions' && <div className="frost-glass rounded-2xl p-4 sm:p-5 mb-5"><h3 className="font-bold text-white mb-2">How to use these model answers</h3><p className="text-sm text-slate-300 leading-relaxed">Start with the direct definition, explain the working in sequence, then draw the labelled signal path where shown. For numerical answers, write the formula, substitute values with units, and state the classic 12-clock-core assumption. The source QB includes a few ambiguous or mistaken prompts; those are explicitly called out in the relevant answer instead of silently changing the question.</p><div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/5 p-3 text-xs text-amber-100">Visual guides are conceptual. Pin numbers, timing limits and electrical connections should be checked against the exact 8051 derivative and peripheral datasheets used in your lab.</div></div>}
+
+    {practiceMode && <div className="frost-glass rounded-3xl p-5 sm:p-8 max-w-3xl mx-auto mb-6">
+      <div className="flex items-center justify-between gap-4 mb-5">
+        <div><p className="text-xs uppercase tracking-widest text-cyan-200 font-bold">RANDOM PRACTICE ROUND</p><h3 className="text-xl font-extrabold mt-1">{practiceIndex < practiceItems.length ? ('Question ' + (practiceIndex + 1) + ' of ' + practiceItems.length) : 'Round complete'}</h3></div>
+        <div className="text-sm rounded-xl bg-white/5 border border-white/10 px-3 py-2">Score <strong className="text-cyan-100">{practiceScore}/{practiceItems.length}</strong></div>
+      </div>
+      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-6"><div className="h-full bg-cyan-200 transition-all" style={{width:(practiceItems.length ? Math.min(practiceIndex / practiceItems.length * 100,100) : 0)+'%'}}/></div>
+      {practiceIndex < practiceItems.length ? <div>
+        <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">Unit {practiceItems[practiceIndex].unit} · QB Q{practiceItems[practiceIndex].n}</p>
+        <h4 className="text-lg font-bold leading-relaxed mb-5">{practiceItems[practiceIndex].q}</h4>
+        <div className="grid gap-2">{practiceItems[practiceIndex].choices?.map((choice,index)=>{
+          const answered=practiceChoice!==null, correct=index===practiceItems[practiceIndex].correct, selected=index===practiceChoice;
+          const style=answered?(correct?'border-emerald-300/50 bg-emerald-300/10 text-emerald-100':selected?'border-rose-300/40 bg-rose-300/10 text-rose-100':'border-white/5 text-slate-500'):'border-white/10 bg-white/[0.03] hover:bg-white/[0.08] text-slate-200';
+          return <button key={choice} type="button" disabled={answered} onClick={()=>choosePracticeAnswer(index)} className={'rounded-xl border p-3 text-left text-sm transition-colors '+style}>{String.fromCharCode(65+index)}. {choice}{answered&&correct?' ✓':''}</button>;
+        })}</div>
+        {practiceChoice!==null && <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4"><p className={practiceChoice===practiceItems[practiceIndex].correct?'font-bold text-sm mb-1 text-emerald-200':'font-bold text-sm mb-1 text-amber-100'}>{practiceChoice===practiceItems[practiceIndex].correct?'Correct!':'Not quite—review this idea.'}</p><p className="text-sm text-slate-300 leading-relaxed">{practiceItems[practiceIndex].a}</p></div>}
+        <div className="flex justify-between items-center mt-6"><button type="button" onClick={()=>setPracticeMode(false)} className="text-sm text-slate-400 hover:text-white">Exit practice</button><button type="button" disabled={practiceChoice===null} onClick={nextPracticeQuestion} className="frost-btn-primary rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-40">{practiceIndex===practiceItems.length-1?'See results':'Next question'} →</button></div>
+      </div> : <div className="text-center py-7"><p className="text-4xl mb-3">{practiceScore>=8?'🏆':practiceScore>=5?'✨':'💪'}</p><h4 className="text-xl font-extrabold">You scored {practiceScore} out of {practiceItems.length}</h4><p className="text-sm text-slate-400 mt-2">Each round draws ten MCQs in a fresh random order, without repeating a question in that round.</p><div className="flex justify-center gap-3 mt-5"><button type="button" onClick={startPractice} className="frost-btn-primary rounded-xl px-4 py-2.5 text-sm font-bold"><RotateCcw className="inline w-4 h-4 mr-2"/>New round</button><button type="button" onClick={()=>setPracticeMode(false)} className="frost-btn rounded-xl px-4 py-2.5 text-sm font-bold">Back to QB</button></div></div>}
+    </div>}
+    <div className={practiceMode ? "hidden" : "space-y-3"}>
       {visible.map(item=><article key={item.n} className="frost-glass rounded-2xl overflow-hidden">
         <button onClick={()=>setOpen(open===item.n?null:item.n)} className="w-full p-4 sm:p-5 text-left flex justify-between gap-4 items-start hover:bg-white/[0.025]">
           <span><span className="inline-flex gap-2 items-center text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2"><span className="bg-white/10 border border-white/10 rounded-md px-2 py-1">Q{item.n}</span><span>Unit {item.unit}</span><span>·</span><span>{item.kind}</span></span><span className="block font-semibold text-sm sm:text-base leading-relaxed">{item.q}</span></span>{open===item.n?<ChevronUp className="w-4 h-4 shrink-0 mt-1"/>:<ChevronDown className="w-4 h-4 shrink-0 mt-1"/>}
