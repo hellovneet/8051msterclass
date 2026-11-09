@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { quizQuestions } from '../data/questions';
+import { qb2024MCQs } from './QB2024Section';
 import { Award, CheckCircle2, XCircle, ArrowRight, RotateCcw } from 'lucide-react';
+
+const normalizeQuestion = (question: string) => question.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const allQuizQuestions = [...quizQuestions, ...qb2024MCQs]
+  .filter((question, index, questions) => questions.findIndex(item => normalizeQuestion(item.question) === normalizeQuestion(question.question)) === index);
 
 interface QuizSectionProps {
   score: number;
@@ -11,17 +16,17 @@ interface QuizSectionProps {
 type QuizCard = { questionIndex: number; optionOrder: number[] };
 
 const createQuizDeck = (avoidQuestionId?: string): QuizCard[] => {
-  const order = quizQuestions.map((_, index) => index);
+  const order = allQuizQuestions.map((_, index) => index);
   for (let i = order.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [order[i], order[j]] = [order[j], order[i]];
   }
-  if (avoidQuestionId && order.length > 1 && quizQuestions[order[0]].id === avoidQuestionId) {
-    const swapIndex = order.findIndex((index) => quizQuestions[index].id !== avoidQuestionId);
+  if (avoidQuestionId && order.length > 1 && allQuizQuestions[order[0]].id === avoidQuestionId) {
+    const swapIndex = order.findIndex((index) => allQuizQuestions[index].id !== avoidQuestionId);
     [order[0], order[swapIndex]] = [order[swapIndex], order[0]];
   }
   return order.map((questionIndex) => {
-    const optionOrder = quizQuestions[questionIndex].options.map((_, index) => index);
+    const optionOrder = allQuizQuestions[questionIndex].options.map((_, index) => index);
     for (let i = optionOrder.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [optionOrder[i], optionOrder[j]] = [optionOrder[j], optionOrder[i]];
@@ -42,7 +47,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
   const [isAnswered, setIsAnswered] = useState(false);
 
   const currentCard = deck[qIndex];
-  const currentQ = quizQuestions[currentCard.questionIndex];
+  const currentQ = allQuizQuestions[currentCard.questionIndex];
   const currentOptions = currentCard.optionOrder.map((optionIndex) => currentQ.options[optionIndex]);
   const correctDisplayIndex = currentCard.optionOrder.indexOf(currentQ.correctIndex);
   const isCorrect = selectedAnswer === correctDisplayIndex;
