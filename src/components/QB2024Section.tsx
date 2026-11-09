@@ -117,6 +117,18 @@ const bank: Item[] = [
 
 ];
 
+export const qb2024MCQs = bank
+  .filter((item) => item.kind === 'MCQ' && item.correct !== undefined)
+  .map((item) => ({
+    id: 'qb2024-' + item.n,
+    unit: item.unit,
+    question: item.q,
+    options: item.choices ?? [],
+    correctIndex: item.correct ?? 0,
+    explanationEn: item.a,
+    explanationHi: ''
+  }));
+
 const units = [
   'Introduction and 8051 architecture',
   'Instruction set and addressing modes',
