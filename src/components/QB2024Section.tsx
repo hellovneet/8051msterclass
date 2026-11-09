@@ -204,7 +204,7 @@ export const QB2024Section: React.FC = () => {
         <div><p className="text-xs uppercase tracking-widest text-cyan-200 font-bold">RANDOM PRACTICE ROUND</p><h3 className="text-xl font-extrabold mt-1">{practiceIndex < practiceItems.length ? ('Question ' + (practiceIndex + 1) + ' of ' + practiceItems.length) : 'Round complete'}</h3></div>
         <div className="text-sm rounded-xl bg-white/5 border border-white/10 px-3 py-2">Score <strong className="text-cyan-100">{practiceScore}/{practiceItems.length}</strong></div>
       </div>
-      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-6"><div className="h-full bg-cyan-200 transition-all" style={{width:(practiceItems.length ? Math.min(practiceIndex / practiceItems.length * 100,100) : 0)+'%'}}/></div>
+      <div role="progressbar" aria-label="Practice question progress" aria-valuemin={0} aria-valuemax={practiceItems.length} aria-valuenow={Math.min(practiceIndex + (practiceChoice !== null ? 1 : 0), practiceItems.length)} className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-6"><div className="h-full bg-cyan-200 transition-all" style={{width:(practiceItems.length ? Math.min((practiceIndex + (practiceChoice !== null ? 1 : 0)) / practiceItems.length * 100,100) : 0)+'%'}}/></div>
       {practiceIndex < practiceItems.length ? <div>
         <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">Unit {practiceItems[practiceIndex].unit} · QB Q{practiceItems[practiceIndex].n}</p>
         <h4 className="text-lg font-bold leading-relaxed mb-5">{practiceItems[practiceIndex].q}</h4>
