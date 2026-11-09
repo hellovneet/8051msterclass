@@ -10,6 +10,7 @@ import { CircuitLabSection } from './components/CircuitLabSection';
 import { LabManualSection } from './components/LabManualSection';
 import { ExamBankSection } from './components/ExamBankSection';
 import { QB2024Section } from './components/QB2024Section';
+import { ExamSimulatorSection } from './components/ExamSimulatorSection';
 import { StudyTools } from './components/StudyTools';
 import { FlashcardsSection } from './components/FlashcardsSection';
 import { ProgramsSection } from './components/ProgramsSection';
@@ -114,6 +115,7 @@ export const App: React.FC = () => {
         <LabManualSection language={language} />
         <ExamBankSection language={language} />
         <QB2024Section />
+        <ExamSimulatorSection />
         <StudyTools units={unitsData} bookmarkedSet={bookmarkedSet} onSelectTopicKey={handleSelectTopicKey} onRemoveBookmark={handleRemoveBookmark} />
         <FlashcardsSection language={language} />
         <ProgramsSection />
