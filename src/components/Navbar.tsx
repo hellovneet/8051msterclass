@@ -27,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({ language, onLanguageChange, done
             { href: '#labmanual', label: 'Lab Manual' },
             { href: '#exambank', label: 'Exam Bank' },
             { href: '#qb2024', label: 'QB 2024 · Solved' },
+            { href: '#exam-simulator', label: 'Mock Exam' },
             { href: '#studytools', label: 'Tools' },
             { href: '#flashcards', label: 'Flashcards' },
             { href: '#programs', label: 'Programs' },
