@@ -8,23 +8,50 @@ interface QuizSectionProps {
   onResetScore: () => void;
 }
 
+type QuizCard = { questionIndex: number; optionOrder: number[] };
+
+const createQuizDeck = (avoidQuestionId?: string): QuizCard[] => {
+  const order = quizQuestions.map((_, index) => index);
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  if (avoidQuestionId && order.length > 1 && quizQuestions[order[0]].id === avoidQuestionId) {
+    const swapIndex = order.findIndex((index) => quizQuestions[index].id !== avoidQuestionId);
+    [order[0], order[swapIndex]] = [order[swapIndex], order[0]];
+  }
+  return order.map((questionIndex) => {
+    const optionOrder = quizQuestions[questionIndex].options.map((_, index) => index);
+    for (let i = optionOrder.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [optionOrder[i], optionOrder[j]] = [optionOrder[j], optionOrder[i]];
+    }
+    return { questionIndex, optionOrder };
+  });
+};
+
 export const QuizSection: React.FC<QuizSectionProps> = ({
   score,
   onIncrementScore,
   onResetScore,
 }) => {
   const [qIndex, setQIndex] = useState(0);
+  const [round, setRound] = useState(1);
+  const [deck, setDeck] = useState<QuizCard[]>(() => createQuizDeck());
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
 
-  const currentQ = quizQuestions[qIndex];
-  const isCorrect = selectedAnswer === currentQ.correctIndex;
+  const currentCard = deck[qIndex];
+  const currentQ = quizQuestions[currentCard.questionIndex];
+  const currentOptions = currentCard.optionOrder.map((optionIndex) => currentQ.options[optionIndex]);
+  const correctDisplayIndex = currentCard.optionOrder.indexOf(currentQ.correctIndex);
+  const isCorrect = selectedAnswer === correctDisplayIndex;
 
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;
     setSelectedAnswer(index);
     setIsAnswered(true);
-    if (index === currentQ.correctIndex) {
+    if (index === correctDisplayIndex) {
       onIncrementScore();
     }
   };
@@ -32,7 +59,13 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
   const handleNextQuestion = () => {
     setSelectedAnswer(null);
     setIsAnswered(false);
-    setQIndex((prev) => (prev + 1) % quizQuestions.length);
+    if (qIndex + 1 < deck.length) {
+      setQIndex((prev) => prev + 1);
+    } else {
+      setDeck(createQuizDeck(currentQ.id));
+      setQIndex(0);
+      setRound((prev) => prev + 1);
+    }
   };
 
   return (
@@ -73,7 +106,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
         <div className="frost-glass rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_2px_rgba(255,255,255,0.3)]">
           <div className="flex items-center justify-between pb-3.5 mb-5 border-b border-white/10">
             <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-300 font-bold px-2.5 py-0.5 rounded-lg bg-white/[0.06] border border-white/15">
-              QUESTION {qIndex + 1} / {quizQuestions.length}
+              ROUND {round} · QUESTION {qIndex + 1} / {deck.length}
             </span>
             <span className="text-xs text-[#808c9f] font-mono">
               Topic: Unit {currentQ.unit}
@@ -85,12 +118,12 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
           </h3>
 
           <div className="space-y-3 mb-6">
-            {currentQ.options.map((opt, idx) => {
+            {currentOptions.map((opt, idx) => {
               const letter = String.fromCharCode(65 + idx);
               let optionStyles = 'bg-white/[0.04] border-white/15 text-neutral-200 hover:bg-white/[0.08] hover:text-white hover:border-white/30';
 
               if (isAnswered) {
-                if (idx === currentQ.correctIndex) {
+                if (idx === correctDisplayIndex) {
                   optionStyles = 'bg-white text-black border-white font-bold shadow-[0_0_20px_rgba(255,255,255,0.4)]';
                 } else if (idx === selectedAnswer) {
                   optionStyles = 'bg-[#331111]/70 border-[#ef4444]/60 text-[#fca5a5] font-bold shadow-[0_0_15px_rgba(239,68,68,0.2)]';
@@ -114,10 +147,10 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
                     <span>{opt}</span>
                   </div>
 
-                  {isAnswered && idx === currentQ.correctIndex && (
+                  {isAnswered && idx === correctDisplayIndex && (
                     <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
                   )}
-                  {isAnswered && idx === selectedAnswer && idx !== currentQ.correctIndex && (
+                  {isAnswered && idx === selectedAnswer && idx !== correctDisplayIndex && (
                     <XCircle className="w-4 h-4 text-[#ef4444] shrink-0" />
                   )}
                 </button>
@@ -147,7 +180,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({
               onClick={handleNextQuestion}
               className="frost-btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold"
             >
-              <span>Next question</span>
+              <span>{qIndex === deck.length - 1 ? 'Start new shuffled round' : 'Next question'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
